@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HIIT Timer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app" aria-live="polite">
+    <section class="timer-panel">
+      <header class="app-header">
+        <p class="eyebrow">HIIT TIMER</p>
+        <h1>インターバルトレーニング</h1>
+      </header>
+
+      <div class="status-area">
+        <p id="phaseLabel" class="phase-label">待機中</p>
+        <p id="timeLeft" class="time-left">00:00</p>
+        <p id="setInfo" class="set-info">セット 0 / 0</p>
+      </div>
+
+      <div class="controls" aria-label="タイマー操作">
+        <button id="startButton" type="button" class="primary-button">スタート</button>
+        <button id="pauseButton" type="button" disabled>一時停止</button>
+        <button id="resetButton" type="button">リセット</button>
+      </div>
+    </section>
+
+    <section class="settings" aria-label="タイマー設定">
+      <div class="field-grid">
+        <label>
+          <span>運動時間</span>
+          <input id="workInput" type="number" min="1" max="3600" value="30">
+          <small>秒</small>
+        </label>
+
+        <label>
+          <span>休憩時間</span>
+          <input id="restInput" type="number" min="0" max="3600" value="15">
+          <small>秒</small>
+        </label>
+
+        <label>
+          <span>セット数</span>
+          <input id="setsInput" type="number" min="1" max="99" value="8">
+          <small>回</small>
+        </label>
+
+        <label>
+          <span>開始前</span>
+          <input id="countdownInput" type="number" min="0" max="300" value="5">
+          <small>秒</small>
+        </label>
+      </div>
+
+      <label class="sound-toggle">
+        <input id="soundToggle" type="checkbox" checked>
+        <span>音通知</span>
+      </label>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
