@@ -206,6 +206,14 @@ small {
   accent-color: var(--accent);
 }
 
+.wake-lock-status {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 @media (max-width: 640px) {
   .app {
     padding: 14px;
