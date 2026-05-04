@@ -197,22 +197,22 @@ function clearTimer() {
 
 function playPhaseSound() {
   if (phase === "countdown" && secondsLeft <= 3 && secondsLeft >= 1) {
-    playPattern([{ frequency: 760, duration: 0.12 }]);
+    playPattern([{ frequency: 980, duration: 0.1 }]);
   } else if (phase === "work") {
     playPattern([
-      { frequency: 1040, duration: 0.32 },
-      { frequency: 1040, duration: 0.32 }
+      { frequency: 1120, duration: 0.38 },
+      { frequency: 1120, duration: 0.38 }
     ]);
   } else if (phase === "rest") {
     playPattern([
-      { frequency: 520, duration: 0.12 },
-      { frequency: 520, duration: 0.12 }
+      { frequency: 420, duration: 0.14 },
+      { frequency: 420, duration: 0.14 }
     ]);
   } else if (phase === "complete") {
     playPattern([
-      { frequency: 880, duration: 0.36 },
-      { frequency: 1040, duration: 0.36 },
-      { frequency: 1240, duration: 0.36 }
+      { frequency: 1040, duration: 0.28 },
+      { frequency: 520, duration: 0.28 },
+      { frequency: 1040, duration: 0.36 }
     ]);
   }
 }
