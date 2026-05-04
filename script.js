@@ -5,6 +5,7 @@ const startButton = document.getElementById("startButton");
 const pauseButton = document.getElementById("pauseButton");
 const resetButton = document.getElementById("resetButton");
 const soundToggle = document.getElementById("soundToggle");
+const wakeLockStatus = document.getElementById("wakeLockStatus");
 
 const inputs = {
   work: document.getElementById("workInput"),
@@ -28,6 +29,8 @@ let totalSets = 0;
 let secondsLeft = 0;
 let paused = false;
 let audioContext = null;
+let wakeLock = null;
+let wakeLockRequestId = 0;
 
 function getSettings() {
   return {
@@ -99,6 +102,7 @@ function startTimer() {
 
   setInputsDisabled(true);
   render();
+  requestWakeLock();
   playPhaseSound();
   timerId = window.setInterval(tick, 1000);
 }
@@ -169,6 +173,7 @@ function togglePause() {
 
 function completeTimer() {
   clearTimer();
+  releaseWakeLock();
   phase = "complete";
   secondsLeft = 0;
   paused = false;
@@ -179,6 +184,7 @@ function completeTimer() {
 
 function resetTimer() {
   clearTimer();
+  releaseWakeLock();
   phase = "idle";
   currentSet = 0;
   totalSets = 0;
@@ -193,6 +199,67 @@ function clearTimer() {
     window.clearInterval(timerId);
     timerId = null;
   }
+}
+
+function isTimerRunning() {
+  return phase === "countdown" || phase === "work" || phase === "rest";
+}
+
+async function requestWakeLock() {
+  if (!("wakeLock" in navigator)) {
+    showWakeLockWarning();
+    return;
+  }
+
+  if (wakeLock || document.visibilityState !== "visible") {
+    return;
+  }
+
+  const requestId = ++wakeLockRequestId;
+
+  try {
+    const requestedWakeLock = await navigator.wakeLock.request("screen");
+
+    if (requestId !== wakeLockRequestId || !isTimerRunning()) {
+      await requestedWakeLock.release();
+      return;
+    }
+
+    wakeLock = requestedWakeLock;
+    wakeLock.addEventListener("release", () => {
+      if (wakeLock === requestedWakeLock) {
+        wakeLock = null;
+      }
+    });
+    hideWakeLockWarning();
+  } catch (error) {
+    showWakeLockWarning();
+  }
+}
+
+async function releaseWakeLock() {
+  wakeLockRequestId += 1;
+
+  if (!wakeLock) {
+    return;
+  }
+
+  const currentWakeLock = wakeLock;
+  wakeLock = null;
+
+  try {
+    await currentWakeLock.release();
+  } catch (error) {
+    // The browser may already have released the lock.
+  }
+}
+
+function showWakeLockWarning() {
+  wakeLockStatus.hidden = false;
+}
+
+function hideWakeLockWarning() {
+  wakeLockStatus.hidden = true;
 }
 
 function playPhaseSound() {
@@ -275,6 +342,12 @@ function getAudioContext() {
 startButton.addEventListener("click", startTimer);
 pauseButton.addEventListener("click", togglePause);
 resetButton.addEventListener("click", resetTimer);
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && isTimerRunning()) {
+    requestWakeLock();
+  }
+});
 
 Object.values(inputs).forEach((input) => {
   input.addEventListener("change", () => {
