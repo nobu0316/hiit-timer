@@ -59,7 +59,8 @@ body.is-complete {
 }
 
 .timer-panel,
-.settings {
+.settings,
+.history {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -155,6 +156,93 @@ button:disabled {
   padding: 18px;
 }
 
+.history {
+  padding: 18px;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.history h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+
+.secondary-button {
+  min-width: 88px;
+  background: transparent;
+  color: var(--button);
+  border: 1px solid var(--line);
+}
+
+.stats-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.stat-item {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.stat-item span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.stat-item strong {
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.history-list {
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  list-style: none;
+}
+
+.history-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.delete-history-button {
+  min-height: 38px;
+  padding: 0 10px;
+  color: var(--button);
+  background: #ffffff;
+  border: 1px solid var(--line);
+}
+
+.empty-history {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .field-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -229,8 +317,13 @@ small {
   }
 
   .controls,
-  .field-grid {
+  .field-grid,
+  .stats-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .stat-item:first-child {
+    grid-column: 1 / -1;
   }
 
   .primary-button {
@@ -245,5 +338,20 @@ small {
 
   .primary-button {
     grid-column: auto;
+  }
+
+  .history-header,
+  .history-item {
+    grid-template-columns: 1fr;
+  }
+
+  .history-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .secondary-button,
+  .delete-history-button {
+    width: 100%;
   }
 }
