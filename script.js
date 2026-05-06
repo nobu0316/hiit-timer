@@ -6,6 +6,12 @@ const pauseButton = document.getElementById("pauseButton");
 const resetButton = document.getElementById("resetButton");
 const soundToggle = document.getElementById("soundToggle");
 const wakeLockStatus = document.getElementById("wakeLockStatus");
+const clearHistoryButton = document.getElementById("clearHistoryButton");
+const latestDateStat = document.getElementById("latestDateStat");
+const daysSinceStat = document.getElementById("daysSinceStat");
+const monthlyCountStat = document.getElementById("monthlyCountStat");
+const historyList = document.getElementById("historyList");
+const emptyHistory = document.getElementById("emptyHistory");
 
 const inputs = {
   work: document.getElementById("workInput"),
@@ -22,6 +28,9 @@ const PHASES = {
   complete: "完了"
 };
 
+const HISTORY_STORAGE_KEY = "hiitTimerHistory";
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 let timerId = null;
 let phase = "idle";
 let currentSet = 0;
@@ -31,6 +40,8 @@ let paused = false;
 let audioContext = null;
 let wakeLock = null;
 let wakeLockRequestId = 0;
+let activeSessionSettings = null;
+let history = loadHistory();
 
 function getSettings() {
   return {
@@ -69,6 +80,24 @@ function formatSeconds(totalSeconds) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+function formatTotalSeconds(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function formatDateTime(value) {
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${year}/${month}/${day} ${hours}:${minutes}`;
+}
+
 function render() {
   phaseLabel.textContent = PHASES[phase];
   timeLeft.textContent = formatSeconds(secondsLeft);
@@ -94,6 +123,7 @@ function startTimer() {
   resetTimer();
 
   const settings = normalizeInputs();
+  activeSessionSettings = settings;
   totalSets = settings.sets;
   currentSet = settings.countdown > 0 ? 0 : 1;
   secondsLeft = settings.countdown > 0 ? settings.countdown : settings.work;
@@ -172,8 +202,12 @@ function togglePause() {
 }
 
 function completeTimer() {
+  const completedSettings = activeSessionSettings || getSettings();
+
   clearTimer();
   releaseWakeLock();
+  saveCompletedWorkout(completedSettings);
+  activeSessionSettings = null;
   phase = "complete";
   secondsLeft = 0;
   paused = false;
@@ -185,6 +219,7 @@ function completeTimer() {
 function resetTimer() {
   clearTimer();
   releaseWakeLock();
+  activeSessionSettings = null;
   phase = "idle";
   currentSet = 0;
   totalSets = 0;
@@ -203,6 +238,102 @@ function clearTimer() {
 
 function isTimerRunning() {
   return phase === "countdown" || phase === "work" || phase === "rest";
+}
+
+function loadHistory() {
+  try {
+    const savedHistory = JSON.parse(localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
+
+    if (!Array.isArray(savedHistory)) {
+      return [];
+    }
+
+    return savedHistory
+      .filter((entry) => entry && entry.completedAt && entry.work && Number.isInteger(entry.sets))
+      .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveHistory() {
+  localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+}
+
+function saveCompletedWorkout(settings) {
+  const entry = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    completedAt: new Date().toISOString(),
+    work: settings.work,
+    rest: settings.rest,
+    sets: settings.sets,
+    total: (settings.work + settings.rest) * settings.sets
+  };
+
+  history = [entry, ...history];
+  saveHistory();
+  renderHistory();
+}
+
+function renderHistory() {
+  historyList.innerHTML = "";
+
+  history.forEach((entry) => {
+    const item = document.createElement("li");
+    item.className = "history-item";
+
+    const text = document.createElement("span");
+    text.textContent = `${formatDateTime(entry.completedAt)}　${entry.work}秒/${entry.rest}秒 × ${entry.sets}セット　合計${formatTotalSeconds(entry.total)}`;
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "delete-history-button";
+    deleteButton.dataset.id = entry.id;
+    deleteButton.textContent = "削除";
+    deleteButton.setAttribute("aria-label", `${formatDateTime(entry.completedAt)}の実績を削除`);
+
+    item.append(text, deleteButton);
+    historyList.append(item);
+  });
+
+  emptyHistory.hidden = history.length > 0;
+  clearHistoryButton.disabled = history.length === 0;
+  renderStats();
+}
+
+function renderStats() {
+  if (history.length === 0) {
+    latestDateStat.textContent = "-";
+    daysSinceStat.textContent = "-";
+    monthlyCountStat.textContent = "0回";
+    return;
+  }
+
+  const latestDate = new Date(history[0].completedAt);
+  const previousDate = history[1] ? new Date(history[1].completedAt) : null;
+  const now = new Date();
+  const monthlyCount = history.filter((entry) => {
+    const completedAt = new Date(entry.completedAt);
+
+    return completedAt.getFullYear() === now.getFullYear()
+      && completedAt.getMonth() === now.getMonth();
+  }).length;
+
+  latestDateStat.textContent = formatDateTime(latestDate);
+  daysSinceStat.textContent = previousDate ? formatDaysSince(previousDate, latestDate) : "-";
+  monthlyCountStat.textContent = `${monthlyCount}回`;
+}
+
+function formatDaysSince(previousDate, latestDate) {
+  const previousDay = new Date(previousDate.getFullYear(), previousDate.getMonth(), previousDate.getDate());
+  const latestDay = new Date(latestDate.getFullYear(), latestDate.getMonth(), latestDate.getDate());
+  const days = Math.round((latestDay - previousDay) / MS_PER_DAY);
+
+  if (days === 0) {
+    return "同日";
+  }
+
+  return `${days}日ぶり`;
 }
 
 async function requestWakeLock() {
@@ -342,6 +473,23 @@ function getAudioContext() {
 startButton.addEventListener("click", startTimer);
 pauseButton.addEventListener("click", togglePause);
 resetButton.addEventListener("click", resetTimer);
+clearHistoryButton.addEventListener("click", () => {
+  history = [];
+  saveHistory();
+  renderHistory();
+});
+
+historyList.addEventListener("click", (event) => {
+  const deleteButton = event.target.closest(".delete-history-button");
+
+  if (!deleteButton) {
+    return;
+  }
+
+  history = history.filter((entry) => entry.id !== deleteButton.dataset.id);
+  saveHistory();
+  renderHistory();
+});
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && isTimerRunning()) {
@@ -356,3 +504,4 @@ Object.values(inputs).forEach((input) => {
 });
 
 render();
+renderHistory();
