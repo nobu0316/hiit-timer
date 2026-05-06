@@ -56,12 +56,40 @@
 
       <label class="sound-toggle">
         <input id="soundToggle" type="checkbox" checked>
-        <span>音通知</span>
+        <span>音で通知</span>
       </label>
 
       <p id="wakeLockStatus" class="wake-lock-status" hidden>
         画面ロック防止はこのブラウザでは利用できません
       </p>
+    </section>
+
+    <section class="history" aria-label="実績ログ">
+      <div class="history-header">
+        <div>
+          <p class="eyebrow">LOG</p>
+          <h2>実績ログ</h2>
+        </div>
+        <button id="clearHistoryButton" type="button" class="secondary-button">全削除</button>
+      </div>
+
+      <div class="stats-grid" aria-label="実績サマリー">
+        <div class="stat-item">
+          <span>直近実施日</span>
+          <strong id="latestDateStat">-</strong>
+        </div>
+        <div class="stat-item">
+          <span>前回から</span>
+          <strong id="daysSinceStat">-</strong>
+        </div>
+        <div class="stat-item">
+          <span>今月の実施回数</span>
+          <strong id="monthlyCountStat">0回</strong>
+        </div>
+      </div>
+
+      <ul id="historyList" class="history-list"></ul>
+      <p id="emptyHistory" class="empty-history">まだ実績がありません</p>
     </section>
   </main>
 
