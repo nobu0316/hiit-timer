@@ -10,6 +10,8 @@ const clearHistoryButton = document.getElementById("clearHistoryButton");
 const latestDateStat = document.getElementById("latestDateStat");
 const daysSinceStat = document.getElementById("daysSinceStat");
 const monthlyCountStat = document.getElementById("monthlyCountStat");
+const monthlyTargetStats = document.getElementById("monthlyTargetStats");
+const targetButtons = Array.from(document.querySelectorAll(".target-button"));
 const historyList = document.getElementById("historyList");
 const emptyHistory = document.getElementById("emptyHistory");
 
@@ -29,6 +31,8 @@ const PHASES = {
 };
 
 const HISTORY_STORAGE_KEY = "hiitTimerHistory";
+const TARGET_STORAGE_KEY = "hiitTimerLastTarget";
+const TARGET_OPTIONS = ["全身", "脚", "腹筋", "胸・腕", "背中", "体幹", "有酸素寄り", "その他"];
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 let timerId = null;
@@ -42,14 +46,41 @@ let wakeLock = null;
 let wakeLockRequestId = 0;
 let activeSessionSettings = null;
 let history = loadHistory();
+let selectedTarget = loadSelectedTarget();
 
 function getSettings() {
   return {
     work: clampNumber(inputs.work.value, 1, 3600),
     rest: clampNumber(inputs.rest.value, 0, 3600),
     sets: clampNumber(inputs.sets.value, 1, 99),
-    countdown: clampNumber(inputs.countdown.value, 0, 300)
+    countdown: clampNumber(inputs.countdown.value, 0, 300),
+    target: selectedTarget
   };
+}
+
+function loadSelectedTarget() {
+  const savedTarget = localStorage.getItem(TARGET_STORAGE_KEY);
+
+  return TARGET_OPTIONS.includes(savedTarget) ? savedTarget : TARGET_OPTIONS[0];
+}
+
+function selectTarget(target) {
+  if (!TARGET_OPTIONS.includes(target) || isTimerRunning()) {
+    return;
+  }
+
+  selectedTarget = target;
+  localStorage.setItem(TARGET_STORAGE_KEY, selectedTarget);
+  renderTargetButtons();
+}
+
+function renderTargetButtons() {
+  targetButtons.forEach((button) => {
+    const isSelected = button.dataset.target === selectedTarget;
+
+    button.classList.toggle("is-selected", isSelected);
+    button.setAttribute("aria-pressed", String(isSelected));
+  });
 }
 
 function clampNumber(value, min, max) {
@@ -117,12 +148,16 @@ function setInputsDisabled(disabled) {
   Object.values(inputs).forEach((input) => {
     input.disabled = disabled;
   });
+  targetButtons.forEach((button) => {
+    button.disabled = disabled;
+  });
 }
 
 function startTimer() {
   resetTimer();
 
   const settings = normalizeInputs();
+  localStorage.setItem(TARGET_STORAGE_KEY, settings.target);
   activeSessionSettings = settings;
   totalSets = settings.sets;
   currentSet = settings.countdown > 0 ? 0 : 1;
@@ -157,7 +192,7 @@ function tick() {
 }
 
 function moveToNextPhase() {
-  const settings = getSettings();
+  const settings = activeSessionSettings || getSettings();
 
   if (phase === "countdown") {
     phase = "work";
@@ -264,6 +299,7 @@ function saveCompletedWorkout(settings) {
   const entry = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     completedAt: new Date().toISOString(),
+    target: settings.target,
     work: settings.work,
     rest: settings.rest,
     sets: settings.sets,
@@ -283,7 +319,8 @@ function renderHistory() {
     item.className = "history-item";
 
     const text = document.createElement("span");
-    text.textContent = `${formatDateTime(entry.completedAt)}　${entry.work}秒/${entry.rest}秒 × ${entry.sets}セット　合計${formatTotalSeconds(entry.total)}`;
+    const target = entry.target || TARGET_OPTIONS[0];
+    text.textContent = `${formatDateTime(entry.completedAt)}　${target}　${entry.work}秒/${entry.rest}秒 × ${entry.sets}セット　合計${formatTotalSeconds(entry.total)}`;
 
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
@@ -306,22 +343,46 @@ function renderStats() {
     latestDateStat.textContent = "-";
     daysSinceStat.textContent = "-";
     monthlyCountStat.textContent = "0回";
+    monthlyTargetStats.innerHTML = "";
     return;
   }
 
   const latestDate = new Date(history[0].completedAt);
   const previousDate = history[1] ? new Date(history[1].completedAt) : null;
   const now = new Date();
-  const monthlyCount = history.filter((entry) => {
+  const monthlyEntries = history.filter((entry) => {
     const completedAt = new Date(entry.completedAt);
 
     return completedAt.getFullYear() === now.getFullYear()
       && completedAt.getMonth() === now.getMonth();
-  }).length;
+  });
 
   latestDateStat.textContent = formatDateTime(latestDate);
   daysSinceStat.textContent = previousDate ? formatDaysSince(previousDate, latestDate) : "-";
-  monthlyCountStat.textContent = `${monthlyCount}回`;
+  monthlyCountStat.textContent = `${monthlyEntries.length}回`;
+  renderMonthlyTargetStats(monthlyEntries);
+}
+
+function renderMonthlyTargetStats(monthlyEntries) {
+  monthlyTargetStats.innerHTML = "";
+
+  const counts = monthlyEntries.reduce((result, entry) => {
+    const target = TARGET_OPTIONS.includes(entry.target) ? entry.target : TARGET_OPTIONS[0];
+
+    result[target] = (result[target] || 0) + 1;
+    return result;
+  }, {});
+
+  TARGET_OPTIONS.forEach((target) => {
+    if (!counts[target]) {
+      return;
+    }
+
+    const item = document.createElement("span");
+    item.className = "target-stat";
+    item.textContent = `${target}: ${counts[target]}回`;
+    monthlyTargetStats.append(item);
+  });
 }
 
 function formatDaysSince(previousDate, latestDate) {
@@ -473,6 +534,11 @@ function getAudioContext() {
 startButton.addEventListener("click", startTimer);
 pauseButton.addEventListener("click", togglePause);
 resetButton.addEventListener("click", resetTimer);
+targetButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    selectTarget(button.dataset.target);
+  });
+});
 clearHistoryButton.addEventListener("click", () => {
   history = [];
   saveHistory();
@@ -503,5 +569,6 @@ Object.values(inputs).forEach((input) => {
   });
 });
 
+renderTargetButtons();
 render();
 renderHistory();
