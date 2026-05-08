@@ -267,6 +267,8 @@ button:disabled {
 }
 
 .target-field {
+  position: relative;
+  z-index: 1;
   margin: 18px 0 0;
   padding: 0;
   border: 0;
@@ -291,9 +293,15 @@ button:disabled {
   color: var(--button);
   background: #ffffff;
   border: 1px solid var(--line);
+  pointer-events: auto;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.target-button.is-selected {
+.target-button.is-selected,
+.target-button.selected,
+.target-button.active {
   color: var(--button-text);
   background: var(--accent);
   border-color: transparent;
