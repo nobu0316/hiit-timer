@@ -209,6 +209,23 @@ button:disabled {
   line-height: 1.35;
 }
 
+.target-stats {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.target-stat {
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.54);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
 .history-list {
   margin: 16px 0 0;
   padding: 0;
@@ -247,6 +264,40 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+}
+
+.target-field {
+  margin: 18px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.target-field legend {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.target-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.target-button {
+  min-height: 52px;
+  padding: 0 10px;
+  color: var(--button);
+  background: #ffffff;
+  border: 1px solid var(--line);
+}
+
+.target-button.is-selected {
+  color: var(--button-text);
+  background: var(--accent);
+  border-color: transparent;
+  box-shadow: 0 0 0 3px rgba(241, 90, 59, 0.18);
 }
 
 label {
@@ -318,7 +369,8 @@ small {
 
   .controls,
   .field-grid,
-  .stats-grid {
+  .stats-grid,
+  .target-buttons {
     grid-template-columns: 1fr 1fr;
   }
 
