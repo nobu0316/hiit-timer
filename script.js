@@ -46,7 +46,8 @@ let wakeLock = null;
 let wakeLockRequestId = 0;
 let activeSessionSettings = null;
 let history = loadHistory();
-let selectedTarget = loadSelectedTarget();
+let selectedBodyPart = loadSelectedTarget();
+let lastTargetPointerTime = 0;
 
 function getSettings() {
   return {
@@ -54,7 +55,7 @@ function getSettings() {
     rest: clampNumber(inputs.rest.value, 0, 3600),
     sets: clampNumber(inputs.sets.value, 1, 99),
     countdown: clampNumber(inputs.countdown.value, 0, 300),
-    target: selectedTarget
+    target: selectedBodyPart
   };
 }
 
@@ -69,18 +70,37 @@ function selectTarget(target) {
     return;
   }
 
-  selectedTarget = target;
-  localStorage.setItem(TARGET_STORAGE_KEY, selectedTarget);
+  selectedBodyPart = target;
+  localStorage.setItem(TARGET_STORAGE_KEY, selectedBodyPart);
   renderTargetButtons();
 }
 
 function renderTargetButtons() {
   targetButtons.forEach((button) => {
-    const isSelected = button.dataset.target === selectedTarget;
+    const isSelected = button.dataset.target === selectedBodyPart;
 
     button.classList.toggle("is-selected", isSelected);
+    button.classList.toggle("selected", isSelected);
+    button.classList.toggle("active", isSelected);
     button.setAttribute("aria-pressed", String(isSelected));
   });
+}
+
+function handleTargetButtonPress(event) {
+  const button = event.currentTarget;
+
+  if (button.disabled || isTimerRunning()) {
+    return;
+  }
+
+  if (event.type === "pointerdown") {
+    lastTargetPointerTime = Date.now();
+    event.preventDefault();
+  } else if (Date.now() - lastTargetPointerTime < 500) {
+    return;
+  }
+
+  selectTarget(button.dataset.target);
 }
 
 function clampNumber(value, min, max) {
@@ -535,9 +555,8 @@ startButton.addEventListener("click", startTimer);
 pauseButton.addEventListener("click", togglePause);
 resetButton.addEventListener("click", resetTimer);
 targetButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    selectTarget(button.dataset.target);
-  });
+  button.addEventListener("pointerdown", handleTargetButtonPress);
+  button.addEventListener("click", handleTargetButtonPress);
 });
 clearHistoryButton.addEventListener("click", () => {
   history = [];
