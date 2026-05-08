@@ -31,13 +31,13 @@
       <div class="field-grid">
         <label>
           <span>運動時間</span>
-          <input id="workInput" type="number" min="1" max="3600" value="30">
+          <input id="workInput" type="number" min="1" max="3600" value="20">
           <small>秒</small>
         </label>
 
         <label>
           <span>休憩時間</span>
-          <input id="restInput" type="number" min="0" max="3600" value="15">
+          <input id="restInput" type="number" min="0" max="3600" value="10">
           <small>秒</small>
         </label>
 
@@ -53,6 +53,20 @@
           <small>秒</small>
         </label>
       </div>
+
+      <fieldset class="target-field">
+        <legend>対象部位</legend>
+        <div id="targetButtons" class="target-buttons" role="group" aria-label="対象部位">
+          <button type="button" class="target-button" data-target="全身" aria-pressed="true">全身</button>
+          <button type="button" class="target-button" data-target="脚" aria-pressed="false">脚</button>
+          <button type="button" class="target-button" data-target="腹筋" aria-pressed="false">腹筋</button>
+          <button type="button" class="target-button" data-target="胸・腕" aria-pressed="false">胸・腕</button>
+          <button type="button" class="target-button" data-target="背中" aria-pressed="false">背中</button>
+          <button type="button" class="target-button" data-target="体幹" aria-pressed="false">体幹</button>
+          <button type="button" class="target-button" data-target="有酸素寄り" aria-pressed="false">有酸素寄り</button>
+          <button type="button" class="target-button" data-target="その他" aria-pressed="false">その他</button>
+        </div>
+      </fieldset>
 
       <label class="sound-toggle">
         <input id="soundToggle" type="checkbox" checked>
@@ -87,6 +101,7 @@
           <strong id="monthlyCountStat">0回</strong>
         </div>
       </div>
+      <div id="monthlyTargetStats" class="target-stats" aria-label="今月の部位別実施回数"></div>
 
       <ul id="historyList" class="history-list"></ul>
       <p id="emptyHistory" class="empty-history">まだ実績がありません</p>
